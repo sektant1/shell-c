@@ -4,7 +4,7 @@
 
 - `CMake`
 - `readline`
-- `clang-format` - Optional
+- `clang-format` - Optional (but why not lol)
 
 ## How to clone, build and compile
 
