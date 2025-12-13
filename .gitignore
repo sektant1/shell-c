@@ -51,5 +51,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+.cache
 build
 vcpkg_installed
