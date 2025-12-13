@@ -1,5 +1,10 @@
 # Shad - A simple C shell
 
+## Dependencies
+
+- `CMake`
+- `readline`
+
 ## How to clone, build and compile
 
 ``` sh
