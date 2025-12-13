@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
 #include "shell.h"
 
 static char PREV_DIR[MAX_INPUT_SIZE] = "";
