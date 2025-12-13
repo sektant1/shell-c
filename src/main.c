@@ -11,7 +11,7 @@
  */
 int main(void)
 {
-    char input[1024];
+    char input[MAX_INPUT_SIZE];
 
     while (1) {
         printf("$ ");
