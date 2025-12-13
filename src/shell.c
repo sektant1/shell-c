@@ -1,60 +1,142 @@
-#include <stdio.h>
+#include "shell.h"
+
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-int MAX_CMD_SIZE = 1024;
+const shell_command_t BUILTIN_COMMANDS[] = {
+    {"quit", do_quit, 0},
+    {"cd", do_cd, 1},
+    {"pwd", do_pwd, 0},
+};
 
-void do_quit()
+// Split input into token before checking builtins
+char **parse_input(char *line)
 {
-    printf("Exiting shell...\n");
-    exit(EXIT_FAILURE);
-}
+    char **argv = malloc(sizeof(char *) * MAX_TOKENS);
+    int    i    = 0;
 
-void do_pwd()
-{
-    char current_path[MAX_CMD_SIZE];
-    printf("%s\n", getcwd(current_path, 1024));
-}
+    char *token = strtok(line, " \t\n");
 
-void do_cd(char *path)
-{
-    char current_path[MAX_CMD_SIZE];
-    printf("%s\n", getcwd(current_path, 1024));
-
-    if (chdir(path) != 0) {
-        perror("chdir() failed");
+    while (token && i < MAX_TOKENS - 1) {
+        argv[i++] = token;
+        token     = strtok(NULL, " \t\n");
     }
 
-    printf("%s\n", getcwd(current_path, 1024));
+    argv[i] = NULL;
+    return argv;
 }
 
-int main(int argc, char *argv[])
+void execute_command(char *input)
 {
-    char input[MAX_CMD_SIZE];
-    printf("$ ");
+    char **argv = parse_input(input);
 
-    while (fgets(input, MAX_CMD_SIZE, stdin) != NULL) {
-        // Flush after every printf
-        setbuf(stdout, NULL);
+    if (argv[0] == NULL) {
+        free(argv);
+        return;
+    }
 
-        input[strcspn(input, "\n")] = '\0';
+    for (size_t i = 0; i < NUM_BUILTINS; i++) {
+        if (strcmp(argv[0], BUILTIN_COMMANDS[i].name) == 0) {
+            if (!BUILTIN_COMMANDS[i].accepts_args && argv[1] != NULL) {
+                fprintf(stderr, "%s: does not accept arguments\n", argv[0]);
+                free(argv);
+                return;
+            }
 
-        if (!strcmp(input, "cd")) {
-            do_cd("/home/sektant/dev");
+            BUILTIN_COMMANDS[i].func(argv);
+            free(argv);
+            return;
+        }
+    }
 
-        } else if (!strcmp(input, "pwd")) {
-            do_pwd();
+    execute_external(argv);
 
-        } else if (!strcmp(input, "quit")) {
-            do_quit();
+    // not a valid command
+    fprintf(stderr, "%s: command not found\n", argv[0]);
+    free(argv);
+}
 
-        } else {
-            printf("%s: command not found\n", input);
+void execute_external(char **argv)
+{
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        // child
+        execvp(argv[0], argv);
+        perror(argv[0]);
+        exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        // parent
+        int status;
+        waitpid(pid, &status, 0);
+    } else {
+        perror("fork");
+    }
+}
+
+void do_quit(char **argv)
+{
+    (void)argv;
+    exit(EXIT_SUCCESS);
+}
+
+void do_pwd(char **argv)
+{
+    char cwd[MAX_CMD_INPUT];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("%s\n", cwd);
+    } else {
+        perror("pwd");
+    }
+}
+
+void do_cd(char **argv)
+{
+    char  cwd[MAX_CMD_INPUT];
+    char *target = NULL;
+
+    if (!getcwd(cwd, sizeof(cwd))) {
+        perror("getcwd");
+        return;
+    }
+
+    if (argv[1] == NULL || strcmp(argv[1], "~") == 0) {
+        target = getenv("HOME");
+
+    } else if (strcmp(argv[1], "-") == 0) {
+        if (PREV_DIR[0] == '\0') {
+            fprintf(stderr, "cd: OLDPWD env not set\n");
+            return;
         }
 
-        printf("$ ");
+        target = PREV_DIR;
+        printf("%s\n", target);
+
+    } else {
+        target = argv[1];
     }
 
+    if (chdir(target) != 0) {
+        perror("cd");
+        return;
+    }
+
+    strcpy(PREV_DIR, cwd);
+}
+
+int main(int argc, char **argv)
+{
+    char input[MAX_CMD_INPUT];
+
+    while (1) {
+        printf("$ ");
+        fflush(stdout);
+
+        if (!fgets(input, sizeof(input), stdin)) {
+            break;
+        }
+
+        execute_command(input);
+    }
     return 0;
 }
