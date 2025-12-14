@@ -8,7 +8,7 @@ int main(void)
     char input[MAX_INPUT_SIZE];
 
     while (1) {
-        printf("$ ");
+        printf("λ ");
         fflush(stdout);
 
         if (!fgets(input, sizeof(input), stdin)) {

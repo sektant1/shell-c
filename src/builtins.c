@@ -46,7 +46,7 @@ void do_pwd(char **argv)
 
 void do_quit(char **argv)
 {
-    (void)argv;
+    (void)argv;  // casting to void to silence unused warning
     exit(EXIT_SUCCESS);
 }
 
