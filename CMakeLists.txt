@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(shell-c)
+project(Shad)
 
 file(GLOB_RECURSE SOURCE_FILES src/*.c src/*.h)
 
