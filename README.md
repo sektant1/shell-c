@@ -11,6 +11,6 @@
 ``` sh
 git clone https://github.com/sektant1/shell-c.git Shad &&
 cd Shad &&
-./build-shell.sh
+./compile.sh
 ```
 Thats it :)
