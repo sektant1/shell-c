@@ -21,7 +21,7 @@ typedef struct
 } shell_command_t;
 
 void   enable_raw_mode();
-auto   read_line_interactive() -> char *;
+char  *read_line_interactive();
 char **parse_input(char *line);
 void   execute_command(char *input);
 void   execute_external(char **argv);
