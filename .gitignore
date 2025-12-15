@@ -52,5 +52,6 @@ Mkfile.old
 dkms.conf
 
 .cache
+bin
 build
 vcpkg_installed
