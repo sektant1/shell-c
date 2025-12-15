@@ -21,12 +21,14 @@ typedef struct
 
 } shell_command_t;
 
-void   enable_raw_mode();
-char  *read_line_interactive();
-char **parse_input(char *line);
-void   expand_env_vars(char **argv);
-void   execute_command(char *input);
-void   execute_external(char **argv);
+void         enable_raw_mode();
+char        *read_line_interactive();
+char       **parse_input(char *line);
+static int   is_var_char(char c);
+static char *expand_token(const char *src);
+void         expand_env_vars(char **argv);
+void         execute_command(char *input);
+void         execute_external(char **argv);
 
 // Builtins
 void do_quit(char **argv);

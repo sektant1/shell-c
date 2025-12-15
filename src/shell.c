@@ -1,9 +1,5 @@
 #include "shell.h"
 
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-
 void enable_raw_mode()
 {
     tcgetattr(STDIN_FILENO, &orig_termios);
@@ -130,6 +126,9 @@ char **parse_input(char *line)
     return argv;
 }
 
+/*
+ * Expand env tokens
+ */
 static int is_var_char(char c)
 {
     return isalnum(c) || c == '_';
