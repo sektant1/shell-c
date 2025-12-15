@@ -1,5 +1,88 @@
 #include "shell.h"
 
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
+
+void enable_raw_mode()
+{
+    tcgetattr(STDIN_FILENO, &orig_termios);
+
+    struct termios raw = orig_termios;
+    raw.c_lflag &= ~(ECHO | ICANON);
+    raw.c_cc[VMIN]  = 1;
+    raw.c_cc[VTIME] = 0;
+
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+char *read_line_interactive(void)
+{
+    static char buffer[MAX_INPUT_SIZE];
+    int         len    = 0;
+    int         cursor = 0;
+
+    while (1) {
+        char c;
+        read(STDIN_FILENO, &c, 1);
+
+        if (c == '\n' || c == '\r') {
+            buffer[len] = '\0';
+            write(STDOUT_FILENO, "\n", 1);
+            return buffer;
+        }
+
+        // backspace
+        if (c == 127) {
+            if (cursor == 0 || len == 0) {
+                continue;
+            }
+
+            memmove(&buffer[cursor - 1], &buffer[cursor], len - cursor);
+            len--;
+            cursor--;
+        }
+
+        // arrow keys
+        else if (c == 27)
+        {
+            char seq[2];
+            read(STDIN_FILENO, &seq[0], 1);
+            read(STDIN_FILENO, &seq[1], 1);
+
+            if (seq[0] == '[') {
+                if (seq[1] == 'D' && cursor > 0) {
+                    cursor--;
+                }
+                if (seq[1] == 'C' && cursor < len) {
+                    cursor++;
+                }
+            }
+        }
+
+        // normal char
+        else if (len < (int)sizeof(buffer) - 1)
+        {
+            memmove(&buffer[cursor + 1], &buffer[cursor], len - cursor);
+            buffer[cursor] = c;
+            len++;
+            cursor++;
+        }
+
+        // REDRAW LINE
+        write(STDOUT_FILENO, "\r$ ", 3);
+        write(STDOUT_FILENO, buffer, len);
+        write(STDOUT_FILENO, "\033[K", 3);
+
+        // Reposition cursor
+        char seq[32];
+        snprintf(seq, sizeof(seq), "\r\033[%dC", cursor + 2);
+        write(STDOUT_FILENO, seq, strlen(seq));
+
+        fflush(stdout);
+    }
+}
+
 /*
  * Tokenize input line into argv.
  * Supports quoted strings:

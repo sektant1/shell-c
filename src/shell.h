@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
 #define MAX_TOKENS     64
@@ -19,7 +20,8 @@ typedef struct
 
 } shell_command_t;
 
-// Tools
+void   enable_raw_mode();
+auto   read_line_interactive() -> char *;
 char **parse_input(char *line);
 void   execute_command(char *input);
 void   execute_external(char **argv);
@@ -31,5 +33,6 @@ void do_cd(char **argv);
 
 extern const shell_command_t BUILTIN_COMMANDS[];
 extern const int             NUM_BUILTINS;
+static struct termios        orig_termios;
 
 #endif

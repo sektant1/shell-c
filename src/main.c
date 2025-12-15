@@ -5,20 +5,14 @@
  */
 int main(void)
 {
-    char input[MAX_INPUT_SIZE];
+    enable_raw_mode();
 
     while (1) {
-        printf("λ ");
+        printf("$ ");
         fflush(stdout);
 
-        if (!fgets(input, sizeof(input), stdin)) {
-            break;
-        }
-
-        input[strcspn(input, "\n")] = '\0';
-
-        execute_command(input);
+        char *line = read_line_interactive();
+        execute_command(line);
     }
-
     return 0;
 }
