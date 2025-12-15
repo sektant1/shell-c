@@ -1,6 +1,7 @@
 #ifndef SHELL_H
 #define SHELL_H
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,7 @@ typedef struct
 void   enable_raw_mode();
 char  *read_line_interactive();
 char **parse_input(char *line);
+void   expand_env_vars(char **argv);
 void   execute_command(char *input);
 void   execute_external(char **argv);
 

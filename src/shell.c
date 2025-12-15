@@ -16,6 +16,10 @@ void enable_raw_mode()
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
+/*
+ * Gets input from raw_mode and
+ * manages Cursor & special chars:
+ */
 char *read_line_interactive(void)
 {
     static char buffer[MAX_INPUT_SIZE];
@@ -92,8 +96,9 @@ char **parse_input(char *line)
     char **argv = malloc(sizeof(char *) * MAX_TOKENS);
     int    argc = 0;
 
-    int   in_quotes = 0;     // STATE: inside quotes?
-    char *start     = NULL;  // STATE: currently building a token?
+    int   is_env_var = 0;
+    int   in_quotes  = 0;     // STATE: inside quotes?
+    char *start      = NULL;  // STATE: currently building a token?
 
     // State transition based on chars
     for (char *p = line; *p; p++) {
@@ -123,6 +128,55 @@ char **parse_input(char *line)
 
     argv[argc] = NULL;
     return argv;
+}
+
+static int is_var_char(char c)
+{
+    return isalnum(c) || c == '_';
+}
+
+static char *expand_token(const char *src)
+{
+    size_t cap = (strlen(src) * 2) + 1;
+    char  *out = malloc(cap);
+    char  *dst = out;
+
+    while (*src) {
+        if (*src != '$') {
+            *dst++ = *src++;
+            continue;
+        }
+
+        src++;
+
+        char var[128];
+        int  i = 0;
+
+        while (*src && is_var_char(*src)) {
+            var[i++] = *src++;
+        }
+
+        var[i] = '\0';
+
+        char *val = getenv(var);
+        if (val) {
+            size_t len = strlen(val);
+            memcpy(dst, val, len);
+            dst += len;
+        }
+    }
+
+    *dst = '\0';
+    return out;
+}
+
+void expand_env_vars(char **argv)
+{
+    for (int i = 0; argv[i]; i++) {
+        if (strchr(argv[i], '$')) {
+            argv[i] = expand_token(argv[i]);
+        }
+    }
 }
 
 /*
@@ -158,6 +212,8 @@ void execute_command(char *input)
         free(argv);
         return;
     }
+
+    expand_env_vars(argv);
 
     for (int i = 0; i < NUM_BUILTINS; i++) {
         if (strcmp(argv[0], BUILTIN_COMMANDS[i].name) == 0) {
